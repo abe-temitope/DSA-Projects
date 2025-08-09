@@ -1,0 +1,51 @@
+
+
+
+SHOW VARIABLES LIKE "secure_file_priv";
+	The result will show you the exact directory path. For example, it might look like C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/.
+	The SHOW VARIABLES LIKE:	command is a fundamental and powerful command in MySQL used to inspect the server's configuration and status variables.
+	It's a key tool for database administrators and developers to diagnose issues, optimize performance, and understand how the server is configured.
+	The primary purpose of SHOW VARIABLES LIKE 'pattern' is to display the values of server system variables that match a given pattern.
+
+	The basic syntax is:
+	SHOW VARIABLES [LIKE 'pattern' | WHERE expr]
+	SHOW VARIABLES: Without any modifiers, this command lists all of the system variables and their current values. This can produce a very long list.
+	LIKE 'pattern': This is the most common way to filter the output. The pattern is a string that can contain SQL wildcard characters:
+	% matches any sequence of zero or more characters.
+	_ matches any single character.
+	For example, LIKE 'secure_file_priv' will find the exact variable name. LIKE '%innodb%' would find all variables related to the InnoDB storage engine.
+	WHERE expr: This allows for more complex filtering using a standard WHERE clause expression, giving you more flexibility than LIKE.
+	Key System Variables
+	The command is essential for checking important variables that affect server behavior, such as:
+	secure_file_priv: As we discussed, this variable is a crucial security setting that controls the directory from which LOAD DATA INFILE and SELECT ... INTO OUTFILE statements can read or write files.
+	max_connections: The maximum number of concurrent client connections the server allows.
+	character_set_server: The default character set for the server.
+	innodb_buffer_pool_size: The size of the buffer pool for InnoDB, which is vital for performance.
+	port: The port number the MySQL server is listening on.
+	
+	
+PROBLEM LAODING DATA INTO MySQL
+	1️⃣ First roadblock — Decimal & Date tantrums
+	What happened: I tried loading my cleaned CSV straight into orders, but MySQL wasn’t having it — columns like DECIMAL and DATE threw errors because some values weren’t perfectly formatted (empty cells, wrong formats, etc.).
+
+	How it was fixed: I created a staging table with every column as VARCHAR. That way, MySQL just took the data “as is” without fuss. Then, I ran an INSERT … SELECT to convert types safely.
+
+	Why it worked: The staging table acted like a “no-judgement zone” 😎 — it let all my rows in, and I controlled the cleanup later.
+
+	2️⃣ Second roadblock — The mysterious "Cardinal Slant-D…” crash
+	What happened: MySQL threw Invalid utf8mb4 character string because it assumed my file was in UTF-8, but Excel had actually saved it in Windows-1252 (latin1). That special apostrophe character tripped the loader.
+
+	How it was fixed: I told MySQL exactly what language my CSV was speaking by adding:
+	CHARACTER SET latin1
+	to the LOAD DATA INFILE command.
+
+	Why it worked: MySQL stopped guessing and read the file exactly how Excel wrote it — no more choking on special characters.
+
+	✅ Endgame for me
+	I loaded 8,399 rows into my table.
+	0 warnings, 0 skips — pure clean load.
+	Now I’ve got a bulletproof two-step import workflow:
+	Dump everything into staging (VARCHAR-safe).
+	Convert and push into the final orders table.
+
+
